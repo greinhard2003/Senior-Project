@@ -102,7 +102,7 @@ U = Move(
     cp=(3, 0, 1, 2, 4, 5, 6, 7),
     co=(0, 0, 0, 0, 0, 0, 0, 0),
     ep=(3, 0, 1, 2, 4, 5, 6, 7, 8, 9, 10, 11),
-    eo=(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
+    eo=(0,)*12
 )
 
 U_PRIME = compose(U, compose(U, U))
@@ -111,7 +111,7 @@ D = Move(
     cp=(0, 1, 2, 3, 5, 6, 7, 4),
     co=(0, 0, 0, 0, 0, 0, 0, 0),
     ep=(0, 1, 2, 3, 5, 6, 7, 4, 8, 9, 10, 11),
-    eo=(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
+    eo=(0,)*12
 )
 
 D_PRIME = compose(D, compose(D, D))
@@ -125,12 +125,4 @@ MOVE TABLE:
 move_names = ['R', 'R\'', 'L', 'L\'', 'F', 'F\'', 'B', 'B\'', 'U', 'U\'', 'D', 'D\'']
 moves = [R, R_PRIME, L, L_PRIME, F, F_PRIME, B, B_PRIME, U, U_PRIME, D, D_PRIME]
 
-random.seed(0)
 
-cube = Cube()
-
-for i in range(10):
-    idx = random.randint(0, len(moves) - 1)
-    print(f"Move: {move_names[idx]}\n")
-    cube = cube.apply_move(moves[idx])
-    print(cube)
