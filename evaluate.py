@@ -1,7 +1,7 @@
 from stable_baselines3 import PPO
 from env import CubeEnv
 
-model = PPO.load("ppo_cube_5_scramble_50M")
+model = PPO.load("ppo_cube_curriculumB.zip")
 def evaluate(scramble_len, n=100):
     env = CubeEnv(scramble_len=scramble_len, max_steps=150)
     solved = 0

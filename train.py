@@ -1,17 +1,35 @@
 from stable_baselines3 import PPO
-from stable_baselines3.common.env_checker import check_env
+from stable_baselines3.common.monitor import Monitor
 from stable_baselines3.common.callbacks import CheckpointCallback
 
 from env import CubeEnv
+from curriculum import SuccessCurriculumCallback  # wherever you put it
 
-env = CubeEnv(scramble_len=5, max_steps=50)
+train_env = Monitor(CubeEnv(scramble_len=5, max_steps=50))
+eval_env = CubeEnv(scramble_len=5, max_steps=50)  # no Monitor needed
 
-# Optional but recommended: validates your env API
-check_env(env, warn=True)
+checkpoint = CheckpointCallback(
+    save_freq=100_000,
+    save_path="./checkpoints",
+    name_prefix="ppo_cube",
+)
+
+curriculum = SuccessCurriculumCallback(
+    eval_env=eval_env,
+    eval_episodes=50,
+    eval_freq=200_000,
+    solve_threshold=0.30,
+    start_scramble=5,
+    end_scramble=30,
+    scramble_step=2,
+    max_steps_scale=8,
+    deterministic=True,
+    verbose=1,
+)
 
 model = PPO(
     "MlpPolicy",
-    env,
+    train_env,
     device="cpu",
     verbose=0,
     n_steps=2048,
@@ -24,12 +42,10 @@ model = PPO(
     ent_coef=0.01,
 )
 
-checkpoint = CheckpointCallback(
-    save_freq=100_000,
-    save_path="./checkpoints",
-    name_prefix="ppo_cube_5"
+model.learn(
+    total_timesteps=10_000_000,
+    progress_bar=True,
+    callback=[checkpoint, curriculum],
 )
 
-model.learn(total_timesteps=50_000_000,
-            progress_bar=True)
-model.save("ppo_cube_5_scramble_50M")
+model.save("ppo_cube_curriculumB")

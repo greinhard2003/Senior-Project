@@ -44,6 +44,28 @@ class Cube:
                 all(v == 0 for v in self.co) and
                 self.ep == list(range(12)) and
                 all(v == 0 for v in self.eo))
+
+    # stage 0: white cross (D edges solved)
+    def white_cross_done(self):
+        return all(self.ep[i] == i and self.eo[i] == 0 for i in [4, 5, 6, 7])
+
+    # stage 1: solve white (D corners solved too)
+    def white_layer_done(self):
+        return self.white_cross_done() and all(self.cp[i] == i and self.co[i] == 0 for i in [4, 5, 6, 7])
+
+    # stage 2: middle edges
+    def middle_done(self):
+        return self.white_layer_done() and all(self.ep[i] == i and self.eo[i] == 0 for i in [8, 9, 10, 11])
+
+    # stage 3: yellow face (orient U layer; permutation can still be wrong)
+    def yellow_face_done(self):
+        # "yellow face" ≈ all U pieces oriented (edges eo=0, corners co=0) assuming U is yellow.
+        return self.middle_done() and all(self.eo[i] == 0 for i in [0, 1, 2, 3]) and all(self.co[i] == 0 for i in [0, 1, 2, 3])
+
+    # stage 4: full solve
+    def solved_done(self):
+        return self.is_solved()
+
     def __repr__(self):
         res = "--------------Cube state:--------------\n"
         res += f"Corner Positions: {self.cp}\n"
