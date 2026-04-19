@@ -1,7 +1,7 @@
 from stable_baselines3 import PPO
 from env import CubeEnv
 
-model = PPO.load("ppo_cube_curriculumB.zip")
+model = PPO.load("ppo_cube_CURRENTBEST.zip")
 def evaluate(scramble_len, n=100):
     env = CubeEnv(scramble_len=scramble_len, max_steps=150)
     solved = 0
@@ -16,5 +16,5 @@ def evaluate(scramble_len, n=100):
         solved += int(info["solved"])
         steps += info["steps"]
     print(f"scramble={scramble_len} | solve_rate={solved/n:.2f} | avg_steps={steps/max(solved,1):.1f}")
-for s in [1,2,3,5]:
+for s in [1,2,3,5, 7, 10, 12, 15, 17, 20, 25]:
     evaluate(s, n=1000)

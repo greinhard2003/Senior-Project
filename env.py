@@ -2,6 +2,9 @@ import numpy as np
 import random
 import gymnasium as gym
 from gymnasium import spaces
+import torch
+import copy
+import pickle
 
 from cube import Cube, moves
 
@@ -29,11 +32,23 @@ def stage_distance(c, stage):
 
 
 def stage_reward(d0, d1, stage_completed, broke_previous):
-    r = (d0 - d1) * 0.2 - 0.01
+    delta = d0 - d1
+
+    r = delta * 0.5
+
+    if delta > 0:
+        r += 0.2
+    elif delta < 0:
+        r -= 0.2
+
+    r -= 0.02
+
     if stage_completed:
-        r += 2.0
+        r += 3.0
+
     if broke_previous:
-        r -= 1.0
+        r -= 2.0
+
     return r
 
 def is_stage_complete(c: Cube, stage: int) -> bool:
@@ -74,14 +89,32 @@ class CubeEnv(gym.Env):
         self.state: Cube | None = None
         self.steps = 0
         self.stage = 0
+        self.target_stage = 1
+
+        self.stage_buffers = {i: [] for i in range(5)}
+        self.max_buffer_size = 10000
 
     def reset(self, seed=None, options=None):
         super().reset(seed=seed)
-        scramble_len = int(self.np_random.integers(self.scramble_min, self.scramble_max + 1))
-        self.state = Cube()
-        for _ in range(scramble_len):
-            a = int(self.np_random.integers(0, len(moves)))
-            self.state = self.state.apply_move(moves[a])
+
+        buffer = self.stage_buffers[self.target_stage - 1]
+
+        use_buffer = (
+                self.target_stage > 0 and
+                len(buffer) > 100 and
+                random.random() < 0.5
+        )
+
+        if use_buffer:
+            self.state = copy.deepcopy(random.choice(self.stage_buffers[self.target_stage - 1]))
+
+            scramble_len = 0  # for logging
+        else:
+            scramble_len = int(self.np_random.integers(self.scramble_min, self.scramble_max + 1))
+            self.state = Cube()
+            for _ in range(scramble_len):
+                a = int(self.np_random.integers(0, len(moves)))
+                self.state = self.state.apply_move(moves[a])
 
         self.steps = 0
         self.stage = 0
@@ -94,39 +127,58 @@ class CubeEnv(gym.Env):
         }
         return obs, info
 
+    def save_buffers(self, path="stage_buffers.pkl"):
+        with open(path, "wb") as f:
+            pickle.dump(self.stage_buffers, f)
+
+    def load_buffers(self, path="stage_buffers.pkl"):
+        with open(path, "rb") as f:
+            self.stage_buffers = pickle.load(f)
+
     def step(self, action):
-        assert self.state is not None, "Call reset() before step()."
+        assert self.state is not None
 
         action = int(action)
 
-        # Measure distance for current stage before/after
         d0 = stage_distance(self.state, self.stage)
+
         self.state = self.state.apply_move(moves[action])
+
         d1 = stage_distance(self.state, self.stage)
 
         self.steps += 1
 
-        # Did we break a previous stage? (regression penalty)
         broke_previous = any(stage_distance(self.state, s) != 0 for s in range(self.stage))
 
-        # Stage completion + advance
         stage_completed = is_stage_complete(self.state, self.stage)
+
+        current_stage = self.stage
+
+        dist = stage_distance(self.state, current_stage)
+
+        if dist == 0 and not broke_previous:
+            if len(self.stage_buffers[current_stage]) < self.max_buffer_size:
+                self.stage_buffers[current_stage].append(copy.deepcopy(self.state))
+
         if stage_completed and self.stage < 4:
-            self.stage += 1  # advance to next stage
+            self.stage += 1
 
         solved = self.state.is_solved()
 
         reward = stage_reward(d0, d1, stage_completed, broke_previous)
+        if solved:
+            reward += 5
+
         obs = encode_state(self.state, self.stage)
 
-        terminated = solved
-        truncated = (self.steps >= self.max_steps)
+        terminated = solved or self.stage >= self.target_stage
+        truncated = self.steps >= self.max_steps
 
         info = {
             "stage": self.stage,
             "stage_completed": stage_completed,
             "broke_previous": broke_previous,
-            "stage_distance": stage_distance(self.state, self.stage) if self.stage <= 4 else 0,
+            "stage_distance": stage_distance(self.state, self.stage),
             "solved": solved,
             "steps": self.steps,
         }

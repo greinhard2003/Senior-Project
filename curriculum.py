@@ -27,20 +27,36 @@ class SuccessCurriculumCallback(BaseCallback):
         self.deterministic = bool(deterministic)
 
         self._next_eval = self.eval_freq
+        self.current_scramble = self.start_scramble
 
     def _on_training_start(self) -> None:
-        # Set initial difficulty on training env(s)
-        self.training_env.set_attr("scramble_max", self.start_scramble)
-        if self.max_steps_scale is not None:
-            self.training_env.set_attr("max_steps", max(50, self.max_steps_scale * self.start_scramble))
+        is_resume = self.num_timesteps > 0
 
-        # Match eval env difficulty to training difficulty
-        self.eval_env.scramble_max = self.start_scramble
-        if self.max_steps_scale is not None:
-            self.eval_env.max_steps = max(50, self.max_steps_scale * self.start_scramble)
+        if not is_resume:
+            self.current_scramble = self.start_scramble
 
-        if self.verbose:
-            print(f"[Curriculum] start scramble_max={self.start_scramble}")
+            if self.verbose:
+                print(f"[Curriculum] Fresh start scramble_max={self.current_scramble}")
+        else:
+            if self.verbose:
+                print(f"[Curriculum] Resuming with scramble_max={self.current_scramble}")
+
+        # Apply stored scramble to envs
+        self.training_env.set_attr("scramble_max", self.current_scramble)
+        self.eval_env.scramble_max = self.current_scramble
+
+        if self.max_steps_scale is not None:
+            max_steps = max(50, self.max_steps_scale * self.current_scramble)
+            self.training_env.set_attr("max_steps", max_steps)
+            self.eval_env.max_steps = max_steps
+
+        # Resume-safe eval scheduling
+        if self.num_timesteps > 0:
+            self._next_eval = (
+                    (self.num_timesteps // self.eval_freq + 1) * self.eval_freq
+            )
+        else:
+            self._next_eval = self.eval_freq
 
     def _evaluate(self):
         solved = 0
@@ -60,9 +76,12 @@ class SuccessCurriculumCallback(BaseCallback):
         return solved / self.eval_episodes
 
     def _maybe_increase_difficulty(self, solve_rate: float):
-        current = self.training_env.get_attr("scramble_max")[0]
+        current = self.current_scramble
+
         if solve_rate >= self.solve_threshold and current < self.end_scramble:
             new = min(self.end_scramble, current + self.scramble_step)
+
+            self.current_scramble = new
 
             self.training_env.set_attr("scramble_max", new)
             self.eval_env.scramble_max = new
@@ -73,7 +92,10 @@ class SuccessCurriculumCallback(BaseCallback):
                 self.eval_env.max_steps = new_max_steps
 
             if self.verbose:
-                print(f"[Curriculum] solve_rate={solve_rate:.2f} >= {self.solve_threshold:.2f} -> scramble_max {current} -> {new}")
+                print(
+                    f"[Curriculum] solve_rate={solve_rate:.2f} >= "
+                    f"{self.solve_threshold:.2f} -> scramble_max {current} -> {new}"
+                )
 
     def _on_step(self) -> bool:
         if self.num_timesteps >= self._next_eval:
