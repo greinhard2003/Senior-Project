@@ -20,7 +20,7 @@ def make_env():
 if __name__ == "__main__":
     TARGET_TOTAL_STEPS = 50_000_000
     LOAD_CHECKPOINT = "--resume" in sys.argv
-    CHECKPOINT_PATH = "./ppo_cube_CURRENTBEST.zip"
+    CHECKPOINT_PATH = "./ppo_cube_CURRENTBEST.zip
     n_envs = 8  # or multiprocessing.cpu_count()
 
     train_env = SubprocVecEnv([make_env() for _ in range(n_envs)])
