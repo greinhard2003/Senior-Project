@@ -45,22 +45,29 @@ class Cube:
                 self.ep == list(range(12)) and
                 all(v == 0 for v in self.eo))
 
-    # stage 0: white cross (D edges solved)
+    # stage 0: white cross
     def white_cross_done(self):
-        return all(self.ep[i] == i and self.eo[i] == 0 for i in [4, 5, 6, 7])
+        return all(self.ep[i] == i and self.eo[i] == 0 for i in [1, 5, 8, 9])
 
-    # stage 1: solve white (D corners solved too)
+    # stage 1: solve white
     def white_layer_done(self):
-        return self.white_cross_done() and all(self.cp[i] == i and self.co[i] == 0 for i in [4, 5, 6, 7])
+        return self.white_cross_done() and all(
+            self.cp[i] == i and self.co[i] == 0
+            for i in [0, 1, 4, 5]
+        )
 
     # stage 2: middle edges
     def middle_done(self):
-        return self.white_layer_done() and all(self.ep[i] == i and self.eo[i] == 0 for i in [8, 9, 10, 11])
+        return self.white_layer_done() and all(
+            self.ep[i] == i and self.eo[i] == 0
+            for i in [0, 2, 4, 6]
+        )
 
-    # stage 3: yellow face (orient U layer; permutation can still be wrong)
+    # stage 3: yellow face
     def yellow_face_done(self):
-        # "yellow face" ≈ all U pieces oriented (edges eo=0, corners co=0) assuming U is yellow.
-        return self.middle_done() and all(self.eo[i] == 0 for i in [0, 1, 2, 3]) and all(self.co[i] == 0 for i in [0, 1, 2, 3])
+        return self.middle_done() and \
+            all(self.eo[i] == 0 for i in [3, 7, 10, 11]) and \
+            all(self.co[i] == 0 for i in [2, 3, 6, 7])
 
     # stage 4: full solve
     def solved_done(self):
