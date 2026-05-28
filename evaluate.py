@@ -16,5 +16,5 @@ def evaluate(scramble_len, n=100):
         solved += int(info["solved"])
         steps += info["steps"]
     print(f"scramble={scramble_len} | solve_rate={solved/n:.2f} | avg_steps={steps/max(solved,1):.1f}")
-for s in [1,2,3,5]:
+for s in [1,2,3,5,7,10,]:
     evaluate(s, n=1000)
