@@ -1,9 +1,9 @@
 from stable_baselines3 import PPO
 from env import CubeEnv
 
-model = PPO.load("ppo_cube_CURRENTBEST.zip")
+model = PPO.load("./checkpoints/ppo_cube_470801920_steps.zip")
 def evaluate(scramble_len, n=100):
-    env = CubeEnv(scramble_len=scramble_len, max_steps=150)
+    env = CubeEnv(scramble_len=scramble_len, max_steps=500)
     solved = 0
     steps = 0
     for _ in range(n):

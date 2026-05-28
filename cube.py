@@ -148,3 +148,6 @@ move_names = ['R', 'R\'', 'L', 'L\'', 'F', 'F\'', 'B', 'B\'', 'U', 'U\'', 'D', '
 moves = [R, R_PRIME, L, L_PRIME, F, F_PRIME, B, B_PRIME, U, U_PRIME, D, D_PRIME]
 
 
+cube = Cube()
+cube = cube.apply_move(R)
+print(cube)

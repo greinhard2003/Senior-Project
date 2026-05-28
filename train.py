@@ -18,9 +18,9 @@ def make_env():
  # no Monitor needed
 
 if __name__ == "__main__":
-    TARGET_TOTAL_STEPS = 50_000_000
+    TARGET_TOTAL_STEPS = 500_000_000
     LOAD_CHECKPOINT = "--resume" in sys.argv
-    CHECKPOINT_PATH = "./ppo_cube_CURRENTBEST.zip
+    CHECKPOINT_PATH = "./checkpoints/ppo_cube_138001920_steps.zip"
     n_envs = 8  # or multiprocessing.cpu_count()
 
     train_env = SubprocVecEnv([make_env() for _ in range(n_envs)])
@@ -36,7 +36,7 @@ if __name__ == "__main__":
         eval_env=eval_env,
         eval_episodes=50,
         eval_freq=100_000,
-        solve_threshold=0.70,
+        solve_threshold=0.80,
         start_scramble=5,
         end_scramble=30,
         scramble_step=2,
@@ -93,4 +93,4 @@ if __name__ == "__main__":
             reset_num_timesteps=True,
         )
 
-    model.save("ppo_cube_50Mil_CB")
+    model.save("ppo_cube_150Mil_CB")
