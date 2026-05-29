@@ -2,7 +2,6 @@ from stable_baselines3 import PPO
 from stable_baselines3.common.callbacks import CheckpointCallback
 from stable_baselines3.common.vec_env import SubprocVecEnv
 from stable_baselines3.common.monitor import Monitor
-import multiprocessing
 import torch
 from env import CubeEnv
 from curriculum import SuccessCurriculumCallback
@@ -10,21 +9,25 @@ import sys
 
 torch.set_num_threads(1)
 
+
 def make_env():
     def _init():
         env = CubeEnv(scramble_len=5, max_steps=60)
         return Monitor(env)
+
     return _init
- # no Monitor needed
+
 
 if __name__ == "__main__":
     TARGET_TOTAL_STEPS = 50_000_000
     LOAD_CHECKPOINT = "--resume" in sys.argv
     CHECKPOINT_PATH = "./ppo_cube_CURRENTBEST.zip"
-    n_envs = 8  # or multiprocessing.cpu_count()
+    n_envs = 8
 
     train_env = SubprocVecEnv([make_env() for _ in range(n_envs)])
+
     eval_env = CubeEnv(scramble_len=5, max_steps=60)
+    eval_env.target_stage = 1
 
     checkpoint = CheckpointCallback(
         save_freq=100_000,
@@ -37,10 +40,13 @@ if __name__ == "__main__":
         eval_episodes=50,
         eval_freq=100_000,
         solve_threshold=0.70,
-        start_scramble=5,
+        start_scramble=1,
         end_scramble=30,
         scramble_step=2,
         max_steps_scale=8,
+        start_stage=0,
+        end_stage=3,
+        min_evals_before_advance=5,
         deterministic=True,
         verbose=1,
     )
