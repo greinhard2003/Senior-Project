@@ -21,7 +21,7 @@ def make_env():
 if __name__ == "__main__":
     TARGET_TOTAL_STEPS = 50_000_000
     LOAD_CHECKPOINT = "--resume" in sys.argv
-    CHECKPOINT_PATH = "./ppo_cube_CURRENTBEST.zip"
+    CHECKPOINT_PATH = "./checkpoints/ppo_cube_4800000_steps.zip"
     n_envs = 8
 
     train_env = SubprocVecEnv([make_env() for _ in range(n_envs)])
@@ -39,14 +39,14 @@ if __name__ == "__main__":
         eval_env=eval_env,
         eval_episodes=50,
         eval_freq=100_000,
-        solve_threshold=0.70,
+        solve_threshold=0.50,
         start_scramble=1,
         end_scramble=30,
         scramble_step=2,
         max_steps_scale=8,
         start_stage=0,
         end_stage=3,
-        min_evals_before_advance=5,
+        min_evals_before_advance=3,
         deterministic=True,
         verbose=1,
     )
