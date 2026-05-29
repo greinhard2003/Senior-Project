@@ -1,7 +1,7 @@
 from stable_baselines3 import PPO
 from env import CubeEnv
 
-model = PPO.load("BufferedStagedModel.zip")
+model = PPO.load("BufferedStagedModel400Mil.zip")
 def evaluate(scramble_len, n=1000):
     env = CubeEnv(scramble_len=scramble_len, max_steps=500)
     env.target_stage = 4  # require full solve
